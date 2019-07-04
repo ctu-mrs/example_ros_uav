@@ -1,0 +1,22 @@
+# rates of timers in Hz
+rate:
+  publish_dist_to_waypoint: 1
+  check_subscribers: 1
+  publish_goto: 10
+
+# number of times the waypoint sequence should be repeated
+n_loops: 1
+
+# should the UAV land after flying through all the waypoints?
+land_at_the_end: false
+
+# matrix of waypoints which will be flown through by the UAV
+waypoints: [-10, -10, 3, 0,
+            10, -10, 3, 1.57,
+            10, 10, 3, 3.14,
+            -10, 10, 3, 4.61]
+
+# offset will be added to all waypoints
+offset: [0, 0, 0, 0]
+
+
