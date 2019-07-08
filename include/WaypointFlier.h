@@ -9,7 +9,7 @@
 #include <ros/package.h>
 #include <nodelet/nodelet.h>
 
-/* for smart pointers (do not use classic c pointers) */
+/* for smart pointers (do not use raw pointers) */
 #include <memory>
 
 /* for protecting variables from simultaneous by from multiple threads */
