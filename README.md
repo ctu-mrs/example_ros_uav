@@ -2,6 +2,13 @@
 
 This package was created to as an example of how to write basic ROS nodelets. The package is written in C++ and features custom MRS libraries and msgs. 
 
+## Functionality
+
+* Desired waypoints are loaded as a matrix from config file
+* Service `fly_to_first_waypoint` prepares the UAV by flying to the first waypoint
+* Service `start_waypoint_following` causes the UAV to start tracking the waypoints
+* Service `stop_waypoint_following` stops adding new waypoints. Flight to the current waypoint is not interrupted.
+
 ## Package structure
 
 See [ROS packages](http://wiki.ros.org/Packages)
@@ -11,6 +18,21 @@ See [ROS packages](http://wiki.ros.org/Packages)
 * `launch` directory containts `.launch` files which are used to parametrize the nodelet. Command-line arguments as well as environment variables can be loaded from the launch files, the nodelet can be put into the correct namespace (each UAV has its own namespace to allow multi-robot applications), config files are loaded and parameters passed to the nodelet. See [.launch files](http://wiki.ros.org/roslaunch/XML)
 * `config` directory contains parameters in `.yaml` files. See [.yaml files](http://wiki.ros.org/rosparam)
 * `package.xml` defines properties of the package, such as package name and dependencies. See [package.xml](http://wiki.ros.org/catkin/package.xml) 
+
+## Features
+
+* Nodelet initialization
+* Subscriber, publisher and timer initialization
+* Service servers and clients initialization
+* Loading parameters with `mrs_lib::ParamLoader` class
+* Loading matrices with `mrs_lib::ParamLoader` class
+* Checking nodelet initialization status in every callback
+* Checking whether subscribed messages are coming 
+* Throttling text output to terminal
+* Thread-safe access to variables using `std::lock_scope()`
+* Using `ConstPtr` when subscribing to a topic to avoid copying large messages
+* Storing and accessing matrices in `Eigen` classes
+* Remapping topics in launch file
 
 ## Coding style
 
@@ -32,7 +54,7 @@ For easy orientation in code we have agreed to follow the ROS C++ Style Guide wh
 
 ### Good practices
 
-* Nodelet everything! Nodelets compared to nodes do not need to send whole messsages. Multiple nodelets running under a same nodelet manager form one process and messages can be passed as pointers. [Nodelet everything] (https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html)
+* Nodelet everything! Nodelets compared to nodes do not need to send whole messsages. Multiple nodelets running under a same nodelet manager form one process and messages can be passed as pointers. [Nodelet everything](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html)
 * Do not use raw pointers! Smart pointers from `<memory>` free resources automatically, thus preventing memory leaks.
 * Lock access to member variables! Nodelets are multi-thread processes, so it is our responsibility to make our code thread-safe.
   - Use `c++17` `scoped_lock` which unlocks the mutex after leaving the scope. This way you can't forget to unlock the mutex. 
