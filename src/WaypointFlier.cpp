@@ -343,7 +343,8 @@ void WaypointFlier::callbackTimerCheckSubscribers([[maybe_unused]] const ros::Ti
 //}
 
 /* callbackTimerIdling() //{ */
-void WaypointFlier::callbackTimerIdling(const ros::TimerEvent& te) {
+void WaypointFlier::callbackTimerIdling([[maybe_unused]] const ros::TimerEvent& te) {
+
   ROS_INFO("[WaypointFlier]: Idling finished");
   is_idling_ = false;
 }
@@ -471,7 +472,6 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
   }
 
   return true;
-
 }
 
 //}

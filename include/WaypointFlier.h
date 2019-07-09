@@ -84,7 +84,7 @@ private:
   void            callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstPtr& msg);
   ros::Subscriber sub_tracker_diag_;
   bool            got_tracker_diag_ = false;
-  bool            is_tracking_ = false;
+  bool            is_tracking_      = false;
   std::mutex      mutex_is_tracking_;
   ros::Time       time_last_tracker_diagnostics_;
 
@@ -106,13 +106,13 @@ private:
 
   // | ---------------- service server callbacks ---------------- |
 
-  bool               callbackStartWaypointFollowing([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+  bool               callbackStartWaypointFollowing(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   ros::ServiceServer srv_server_start_waypoints_following_;
 
-  bool               callbackStopWaypointFollowing([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+  bool               callbackStopWaypointFollowing(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   ros::ServiceServer srv_server_stop_waypoints_following_;
 
-  bool               callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+  bool               callbackFlyToFirstWaypoint(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   ros::ServiceServer srv_server_fly_to_first_waypoint_;
 
   // | --------------------- service clients -------------------- |
@@ -139,8 +139,8 @@ private:
   typedef dynamic_reconfigure::Server<waypoint_flier::dynparamConfig> ReconfigureServer;
   boost::recursive_mutex                                              mutex_dynamic_reconfigure_;
   boost::shared_ptr<ReconfigureServer>                                reconfigure_server_;
-  void                           callbackDynamicReconfigure([[maybe_unused]] Config& config, [[maybe_unused]] uint32_t level);
-  waypoint_flier::dynparamConfig last_drs_config_;
+  void                                                                callbackDynamicReconfigure(Config& config, uint32_t level);
+  waypoint_flier::dynparamConfig                                      last_drs_config_;
 
   // | --------------------- waypoint idling -------------------- |
 
