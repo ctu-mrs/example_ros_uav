@@ -21,9 +21,10 @@ void WaypointFlier::onInit() {
   is_tracking_      = false;
   waypoints_loaded_ = false;
 
+  /* obtain node handle */
   ros::NodeHandle _nh("~");
 
-  // waits for the ROS to publish clock
+  /* waits for the ROS to publish clock */
   ros::Time::waitForValid();
 
   // | ------------------- load ros parameters ------------------ |
