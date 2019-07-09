@@ -24,6 +24,7 @@
   <!-- Authors do not have to be maintianers, but could be -->
   <!-- Example: -->
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+  `<author email="matej.petrlik@fel.cvut.cz">Matej Petrlik</author>
 
 
   <!-- The *_depend tags are used to specify dependencies -->
@@ -41,6 +42,7 @@
   <depend>nav_msgs</depend>
   <depend>mrs_msgs</depend>
   <depend>mrs_lib</depend>
+  <depend>dynamic_reconfigure</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

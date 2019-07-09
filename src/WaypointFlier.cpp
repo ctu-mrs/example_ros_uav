@@ -28,6 +28,7 @@ void WaypointFlier::onInit() {
   param_loader.load_param("simulation", _simulation_);
   param_loader.load_param("land_at_the_end", _land_end_);
   param_loader.load_param("n_loops", _n_loops_);
+  param_loader.load_param("waypoint_idle_time", _waypoint_idle_time_);
   param_loader.load_param("rate/publish_dist_to_waypoint", _rate_timer_publish_dist_to_waypoint_);
   param_loader.load_param("rate/check_subscribers", _rate_timer_check_subscribers_);
   param_loader.load_param("rate/publish_goto", _rate_timer_publish_goto_);
@@ -39,7 +40,7 @@ void WaypointFlier::onInit() {
   n_waypoints_          = waypoints_.size();
   waypoints_loaded_     = true;
   idx_current_waypoint_ = 0;
-  c_loop_                = 0;
+  c_loop_               = 0;
   ROS_INFO_STREAM_ONCE("[WaypointFlier]: " << n_waypoints_ << " waypoints loaded");
   ROS_INFO_STREAM_ONCE("[WaypointFlier]: " << _n_loops_ << " loops requested");
 
@@ -75,6 +76,17 @@ void WaypointFlier::onInit() {
   // | --------------- initialize service clients --------------- |
   srv_client_land_ = _nh.serviceClient<std_srvs::Trigger>("land_out");
 
+  // | ---------- initialize dynamic reconfigure server --------- |
+  reconfigure_server_.reset(new ReconfigureServer(mutex_dynamic_reconfigure_, _nh));
+  ReconfigureServer::CallbackType f = boost::bind(&WaypointFlier::callbackDynamicReconfigure, this, _1, _2);
+  reconfigure_server_->setCallback(f);
+
+  /* set the default value of dynamic reconfigure server to the value of parameter with the same name */
+  {
+    std::scoped_lock lock(mutex_waypoint_idle_time_);
+    last_drs_config_.waypoint_idle_time = _waypoint_idle_time_;
+  }
+  reconfigure_server_->updateConfig(last_drs_config_);
 
   ROS_INFO_ONCE("[WaypointFlier]: Nodelet initialized");
 
@@ -122,6 +134,13 @@ void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstP
     ROS_INFO("[WaypointFlier]: Waypoint reached.");
     std::scoped_lock lock(mutex_is_tracking_);
     is_tracking_ = false;
+
+    /* start idling at the reached waypoint */
+    is_idling_ = true;
+    ros::NodeHandle _nh("~");
+    timer_idling_ = _nh.createTimer(ros::Duration(_waypoint_idle_time_), &WaypointFlier::callbackTimerIdling, this,
+                                    true);  // the last boolean argument makes the timer run only once
+    ROS_INFO("[WaypointFlier]: Idling for %2.2f seconds.", _waypoint_idle_time_);
   }
 
   time_last_tracker_diagnostics_ = ros::Time::now();
@@ -162,22 +181,26 @@ void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
   if (is_tracking_)
     return;
 
+  /* return if the UAV is idling at a waypoint */
+  if (is_idling_)
+    return;
+
   /* shutdown node after flying through all the waypoints (call land service before) */
   if (idx_current_waypoint_ >= n_waypoints_) {
     c_loop_++;
     ROS_INFO("[WaypointFlier]: Finished loop %d/%d", c_loop_, _n_loops_);
     if (c_loop_ >= _n_loops_) {
-    ROS_INFO("[WaypointFlier]: Finished %d loops of %d waypoints.", _n_loops_, n_waypoints_);
-    if (_land_end_) {
-      ROS_INFO("[WaypointFlier]: Calling land service.");
-      std_srvs::Trigger srv_land_call;
-      srv_client_land_.call(srv_land_call);
-    }
-    ROS_INFO("[WaypointFlier]: Shutting down.");
-    ros::shutdown();
-    return;
+      ROS_INFO("[WaypointFlier]: Finished %d loops of %d waypoints.", _n_loops_, n_waypoints_);
+      if (_land_end_) {
+        ROS_INFO("[WaypointFlier]: Calling land service.");
+        std_srvs::Trigger srv_land_call;
+        srv_client_land_.call(srv_land_call);
+      }
+      ROS_INFO("[WaypointFlier]: Shutting down.");
+      ros::shutdown();
+      return;
     } else {
-      ROS_INFO("[WaypointFlier]: Starting loop %d/%d", c_loop_+1, _n_loops_);
+      ROS_INFO("[WaypointFlier]: Starting loop %d/%d", c_loop_ + 1, _n_loops_);
       idx_current_waypoint_ = 0;
     }
   }
@@ -198,8 +221,8 @@ void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
   }
   new_waypoint.use_yaw = true;
 
-  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_+1, new_waypoint.position.x, new_waypoint.position.y,
-           new_waypoint.position.z, new_waypoint.position.yaw);
+  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_ + 1, new_waypoint.position.x,
+           new_waypoint.position.y, new_waypoint.position.z, new_waypoint.position.yaw);
 
   try {
     pub_goto_.publish(new_waypoint);
@@ -298,6 +321,13 @@ void WaypointFlier::callbackTimerCheckSubscribers(const ros::TimerEvent& te) {
       }
     }
   }
+}
+//}
+
+/* callbackTimerIdling() //{ */
+void WaypointFlier::callbackTimerIdling(const ros::TimerEvent& te) {
+  ROS_INFO("[WaypointFlier]: Idling finished");
+  is_idling_ = false;
 }
 //}
 
@@ -423,6 +453,28 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
 
 //}
 
+// | -------------- dynamic reconfigure callback -------------- |
+
+/* //{ callbackDynamicReconfigure() */
+void WaypointFlier::callbackDynamicReconfigure([[maybe_unused]] Config& config, [[maybe_unused]] uint32_t level) {
+
+  if (!is_initialized_)
+    return;
+
+  ROS_INFO(
+      "[WaypointFlier]:"
+      "Reconfigure Request: "
+      "Waypoint idle time: %2.2f",
+      config.waypoint_idle_time);
+
+  {
+    std::scoped_lock lock(mutex_waypoint_idle_time_);
+
+    _waypoint_idle_time_ = config.waypoint_idle_time;
+  }
+}
+//}
+
 // | -------------------- support functions ------------------- |
 
 /* matrixToPoints() //{ */
@@ -448,7 +500,7 @@ std::vector<mrs_msgs::TrackerPoint> WaypointFlier::matrixToPoints(const Eigen::M
 
 void WaypointFlier::offsetPoints(std::vector<mrs_msgs::TrackerPoint>& points, const Eigen::MatrixXd& offset) {
 
-  for (size_t i=0; i < points.size(); i++) {
+  for (size_t i = 0; i < points.size(); i++) {
     points.at(i).x += offset(0);
     points.at(i).y += offset(1);
     points.at(i).z += offset(2);

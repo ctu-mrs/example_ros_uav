@@ -19,7 +19,7 @@ See [ROS packages](http://wiki.ros.org/Packages)
 * `config` directory contains parameters in `.yaml` files. See [.yaml files](http://wiki.ros.org/rosparam)
 * `package.xml` defines properties of the package, such as package name and dependencies. See [package.xml](http://wiki.ros.org/catkin/package.xml) 
 
-## Features
+## Example features
 
 * Nodelet initialization
 * Subscriber, publisher and timer initialization

@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   mrs_msgs
   mrs_lib
-)
+  )
 
 #Find Eigen libraries
 find_package(Eigen3 REQUIRED)
@@ -23,15 +23,15 @@ set(Eigen_LIBRARIES ${Eigen_LIBRARIES})
 
 ## Generate dynamic parameters which are loaded by the dynamic reconfigure server
 generate_dynamic_reconfigure_options(
-#config / dynparam.cfg
+  config/dynparam.cfg
   )
 
 catkin_package(
- INCLUDE_DIRS include
- LIBRARIES UavProject
- CATKIN_DEPENDS roscpp mrs_lib mrs_msgs geometry_msgs nav_msgs
- DEPENDS Eigen
-)
+  INCLUDE_DIRS include
+  LIBRARIES WaypointFlier
+  CATKIN_DEPENDS roscpp mrs_lib mrs_msgs geometry_msgs nav_msgs
+  DEPENDS Eigen
+  )
 
 ###########
 ## Build ##
