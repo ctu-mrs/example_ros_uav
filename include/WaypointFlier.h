@@ -9,6 +9,12 @@
 #include <ros/package.h>
 #include <nodelet/nodelet.h>
 
+/* for loading dynamic parameters while the nodelet is running */
+#include <dynamic_reconfigure/server.h>
+
+/* this header file is created during compilation from python script dynparam.cfg */
+#include <waypoint_flier/dynparamConfig.h>
+
 /* for smart pointers (do not use raw pointers) */
 #include <memory>
 
@@ -124,7 +130,25 @@ private:
   int                                 n_waypoints_;
   int                                 _n_loops_;
   int                                 c_loop_;
+  std::mutex                          mutex_waypoint_idle_time_;
   Eigen::MatrixXd                     _offset_;
+
+  // | ------------------- dynamic reconfigure ------------------ |
+
+  typedef waypoint_flier::dynparamConfig                              Config;
+  typedef dynamic_reconfigure::Server<waypoint_flier::dynparamConfig> ReconfigureServer;
+  boost::recursive_mutex                                              mutex_dynamic_reconfigure_;
+  boost::shared_ptr<ReconfigureServer>                                reconfigure_server_;
+  void                           callbackDynamicReconfigure([[maybe_unused]] Config& config, [[maybe_unused]] uint32_t level);
+  waypoint_flier::dynparamConfig last_drs_config_;
+
+  // | --------------------- waypoint idling -------------------- |
+
+  bool       is_idling_;
+  ros::Timer timer_idling_;
+  double     _waypoint_idle_time_;
+  void       callbackTimerIdling(const ros::TimerEvent& te);
+
 
   // | -------------------- support functions ------------------- |
 
