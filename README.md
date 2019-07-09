@@ -21,22 +21,22 @@ See [ROS packages](http://wiki.ros.org/Packages)
 
 ## Example features
 
-* Nodelet initialization
-* Subscriber, publisher, and timer initialization
-* Service servers and clients initialization
-* Loading parameters with `mrs_lib::ParamLoader` class
-* Loading matrices with `mrs_lib::ParamLoader` class
+* [Nodelet](http://wiki.ros.org/nodelet) initialization
+* [Subscriber, publisher](http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28c%2B%2B%29), and [timer](http://wiki.ros.org/roscpp/Overview/Timers) initialization
+* [Service servers and clients](http://wiki.ros.org/roscpp/Overview/Services) initialization
+* Loading [parameters](http://wiki.ros.org/Parameter%20Server) with `mrs_lib::ParamLoader` class
+* Loading [Eigen matrices](https://eigen.tuxfamily.org/dox/group__TutorialMatrixClass.html) with `mrs_lib::ParamLoader` class
 * Checking nodelet initialization status in every callback
 * Checking whether subscribed messages are coming
-* Throttling text output to a terminal
-* Thread-safe access to variables using `std::lock_scope()`
+* Throttling [text output](http://wiki.ros.org/roscpp/Overview/Logging) to a terminal
+* [Thread-safe access](https://en.cppreference.com/w/cpp/thread/mutex) to variables using `std::lock_scope()`
 * Using `ConstPtr` when subscribing to a topic to avoid copying large messages
 * Storing and accessing matrices in `Eigen` classes
-* Remapping topics in the launch file
+* [Remapping topics](http://wiki.ros.org/roslaunch/XML/remap) in the launch file
 
 ## Coding style
 
-For easy orientation in the code, we have agreed to follow the ROS C++ Style Guide when writing our packages. See [ROSCppStyleGuide](http://wiki.ros.org/CppStyleGuide)
+For easy orientation in the code, we have agreed to follow the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide) when writing our packages.
 
 ### Naming variables
 
@@ -54,7 +54,7 @@ For easy orientation in the code, we have agreed to follow the ROS C++ Style Gui
 
 ### Good practices
 
-* Nodelet everything! Nodelets compared to nodes do not need to send whole messages. Multiple nodelets running under the same nodelet manager form one process and messages can be passed as pointers. [Nodelet everything](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html)
+* [Nodelet everything!](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html) Nodelets compared to nodes do not need to send whole messages. Multiple nodelets running under the same nodelet manager form one process and messages can be passed as pointers.
 * Do not use raw pointers! Smart pointers from `<memory>` free resources automatically, thus preventing memory leaks.
 * Lock access to member variables! Nodelets are multi-thread processes, so it is our responsibility to make our code thread-safe.
   - Use `c++17` `scoped_lock` which unlocks the mutex after leaving the scope. This way, you can't forget to unlock the mutex.
