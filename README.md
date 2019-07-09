@@ -36,7 +36,7 @@ See [ROS packages](http://wiki.ros.org/Packages)
 
 ## Coding style
 
-For easy orientation in the code, we have agreed to follow the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide) when writing our packages. See [ROSCppStyleGuide]
+For easy orientation in the code, we have agreed to follow the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide) when writing our packages.
 
 ### Naming variables
 
@@ -54,7 +54,7 @@ For easy orientation in the code, we have agreed to follow the [ROS C++ Style Gu
 
 ### Good practices
 
-* [Nodelet everything!](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html) Nodelets compared to nodes do not need to send whole messages. Multiple nodelets running under the same nodelet manager form one process and messages can be passed as pointers. [Nodelet everything](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html)
+* [Nodelet everything!](https://www.clearpathrobotics.com/assets/guides/ros/Nodelet%20Everything.html) Nodelets compared to nodes do not need to send whole messages. Multiple nodelets running under the same nodelet manager form one process and messages can be passed as pointers.
 * Do not use raw pointers! Smart pointers from `<memory>` free resources automatically, thus preventing memory leaks.
 * Lock access to member variables! Nodelets are multi-thread processes, so it is our responsibility to make our code thread-safe.
   - Use `c++17` `scoped_lock` which unlocks the mutex after leaving the scope. This way, you can't forget to unlock the mutex.
