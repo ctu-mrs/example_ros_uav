@@ -64,7 +64,7 @@ For easy orientation in the code, we have agreed to follow the ROS C++ Style Gui
     odom_uav_ = *msg;
   }
   ```
-* Use `ros::Time::waitForValid()` after creating node handle `ros::NodeHandle _nh("~")`
+* Use `ros::Time::waitForValid()` after creating node handle `ros::NodeHandle nh("~")`
 * When a nodelet is initialized, the method `onInit()` is called. In the method, the subscribers are initialized, and callbacks are bound to them. The callbacks can run even before the `onInit()` method ends, which can lead to some variables being still not initialized, parameters not loaded, etc. This can be prevented by using an `is_initialized_`, initializing it to `false` at the beginning of `onInit()` and setting it to true at the end. Every callback should check this variable and continue only when it is `true`.
 * Use `mrs_lib::ParamLoader` class to load parameters from launch files and config files. This class checks whether the parameter was actually loaded, which can save a lot of debugging. Furthermore, loading matrices into config files becomes much simpler.
 * For printing debug info to terminal use `ROS_INFO()`, `ROS_WARN()`, `ROS_ERROR()` macros. Do not spam the terminal by printing a variable every time a callback is called, use for example `ROS_INFO_THROTTTLE(1.0, "dog")` to print *dog* not more often than every second. Other animals can also be used for debugging purposes.

@@ -21,14 +21,14 @@ void WaypointFlier::onInit() {
   is_tracking_      = false;
   waypoints_loaded_ = false;
 
-  ros::NodeHandle _nh("~");
+  ros::NodeHandle nh("~");
 
   // waits for the ROS to publish clock
   ros::Time::waitForValid();
 
   // | ------------------- load ros parameters ------------------ |
   /* (mrs_lib implementation checks whether the parameter was loaded or not) */
-  mrs_lib::ParamLoader param_loader(_nh, "WaypointFlier");
+  mrs_lib::ParamLoader param_loader(nh, "WaypointFlier");
 
   param_loader.load_param("simulation", _simulation_);
   param_loader.load_param("land_at_the_end", _land_end_);
@@ -54,34 +54,34 @@ void WaypointFlier::onInit() {
   offsetPoints(waypoints_, _offset_);
 
   // | ------------------ initialize subscribers ----------------- |
-  sub_odom_uav_     = _nh.subscribe("odom_uav_in", 1, &WaypointFlier::callbackOdomUav, this, ros::TransportHints().tcpNoDelay());
-  sub_tracker_diag_ = _nh.subscribe("tracker_diagnostics_in", 1, &WaypointFlier::callbackTrackerDiag, this, ros::TransportHints().tcpNoDelay());
+  sub_odom_uav_     = nh.subscribe("odom_uav_in", 1, &WaypointFlier::callbackOdomUav, this, ros::TransportHints().tcpNoDelay());
+  sub_tracker_diag_ = nh.subscribe("tracker_diagnostics_in", 1, &WaypointFlier::callbackTrackerDiag, this, ros::TransportHints().tcpNoDelay());
 
   /* subscribe ground truth only in simulation, where it is available */
   if (_simulation_) {
-    sub_odom_gt_ = _nh.subscribe("odom_gt_in", 1, &WaypointFlier::callbackOdomGt, this, ros::TransportHints().tcpNoDelay());
+    sub_odom_gt_ = nh.subscribe("odom_gt_in", 1, &WaypointFlier::callbackOdomGt, this, ros::TransportHints().tcpNoDelay());
   }
 
   // | ------------------ initialize publishers ----------------- |
-  pub_dist_to_waypoint_ = _nh.advertise<mrs_msgs::Float64Stamped>("dist_to_waypoint_out", 1);
-  pub_goto_             = _nh.advertise<mrs_msgs::TrackerPointStamped>("goto_out", 1);
+  pub_dist_to_waypoint_ = nh.advertise<mrs_msgs::Float64Stamped>("dist_to_waypoint_out", 1);
+  pub_goto_             = nh.advertise<mrs_msgs::TrackerPointStamped>("goto_out", 1);
 
   // | -------------------- initialize timers ------------------- |
-  timer_publish_dist_to_waypoint_ = _nh.createTimer(ros::Rate(_rate_timer_publish_dist_to_waypoint_), &WaypointFlier::callbackTimerPublishDistToWaypoint, this);
-  timer_check_subscribers_        = _nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &WaypointFlier::callbackTimerCheckSubscribers, this);
+  timer_publish_dist_to_waypoint_ = nh.createTimer(ros::Rate(_rate_timer_publish_dist_to_waypoint_), &WaypointFlier::callbackTimerPublishDistToWaypoint, this);
+  timer_check_subscribers_        = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &WaypointFlier::callbackTimerCheckSubscribers, this);
   // you can disable autostarting of the timer by the last argument
-  timer_publish_goto_ = _nh.createTimer(ros::Rate(_rate_timer_publish_goto_), &WaypointFlier::callbackTimerPublishGoTo, this, false, false);
+  timer_publish_goto_ = nh.createTimer(ros::Rate(_rate_timer_publish_goto_), &WaypointFlier::callbackTimerPublishGoTo, this, false, false);
 
   // | --------------- initialize service servers --------------- |
-  srv_server_start_waypoints_following_ = _nh.advertiseService("start_waypoints_following_in", &WaypointFlier::callbackStartWaypointFollowing, this);
-  srv_server_stop_waypoints_following_  = _nh.advertiseService("stop_waypoints_following_in", &WaypointFlier::callbackStopWaypointFollowing, this);
-  srv_server_fly_to_first_waypoint_     = _nh.advertiseService("fly_to_first_waypoint_in", &WaypointFlier::callbackFlyToFirstWaypoint, this);
+  srv_server_start_waypoints_following_ = nh.advertiseService("start_waypoints_following_in", &WaypointFlier::callbackStartWaypointFollowing, this);
+  srv_server_stop_waypoints_following_  = nh.advertiseService("stop_waypoints_following_in", &WaypointFlier::callbackStopWaypointFollowing, this);
+  srv_server_fly_to_first_waypoint_     = nh.advertiseService("fly_to_first_waypoint_in", &WaypointFlier::callbackFlyToFirstWaypoint, this);
 
   // | --------------- initialize service clients --------------- |
-  srv_client_land_ = _nh.serviceClient<std_srvs::Trigger>("land_out");
+  srv_client_land_ = nh.serviceClient<std_srvs::Trigger>("land_out");
 
   // | ---------- initialize dynamic reconfigure server --------- |
-  reconfigure_server_.reset(new ReconfigureServer(mutex_dynamic_reconfigure_, _nh));
+  reconfigure_server_.reset(new ReconfigureServer(mutex_dynamic_reconfigure_, nh));
   ReconfigureServer::CallbackType f = boost::bind(&WaypointFlier::callbackDynamicReconfigure, this, _1, _2);
   reconfigure_server_->setCallback(f);
 
@@ -143,9 +143,9 @@ void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstP
 
     /* start idling at the reached waypoint */
     is_idling_ = true;
-    ros::NodeHandle _nh("~");
-    timer_idling_ = _nh.createTimer(ros::Duration(_waypoint_idle_time_), &WaypointFlier::callbackTimerIdling, this,
-                                    true);  // the last boolean argument makes the timer run only once
+    ros::NodeHandle nh("~");
+    timer_idling_ = nh.createTimer(ros::Duration(_waypoint_idle_time_), &WaypointFlier::callbackTimerIdling, this,
+                                   true);  // the last boolean argument makes the timer run only once
     ROS_INFO("[WaypointFlier]: Idling for %2.2f seconds.", _waypoint_idle_time_);
   }
 
