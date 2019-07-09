@@ -8,8 +8,12 @@ namespace waypoint_flier
 {
 
 /* onInit() //{ */
+
 void WaypointFlier::onInit() {
 
+  // | ---------------- set my booleans to false ---------------- |
+  // but remember, always set them to their default value in the header file
+  // because, when you add new one later, you might forger to come back here
   got_odom_uav_     = false;
   got_odom_gt_      = false;
   got_tracker_diag_ = false;
@@ -19,6 +23,7 @@ void WaypointFlier::onInit() {
 
   ros::NodeHandle _nh("~");
 
+  // waits for the ROS to publish clock
   ros::Time::waitForValid();
 
   // | ------------------- load ros parameters ------------------ |
@@ -39,10 +44,9 @@ void WaypointFlier::onInit() {
   n_waypoints_          = waypoints_.size();
   waypoints_loaded_     = true;
   idx_current_waypoint_ = 0;
-  c_loop_                = 0;
+  c_loop_               = 0;
   ROS_INFO_STREAM_ONCE("[WaypointFlier]: " << n_waypoints_ << " waypoints loaded");
   ROS_INFO_STREAM_ONCE("[WaypointFlier]: " << _n_loops_ << " loops requested");
-
 
   /* load offset of all waypoints as a static matrix from config file */
   param_loader.load_matrix_static("offset", _offset_, 1, 4);
@@ -64,8 +68,8 @@ void WaypointFlier::onInit() {
   // | -------------------- initialize timers ------------------- |
   timer_publish_dist_to_waypoint_ = _nh.createTimer(ros::Rate(_rate_timer_publish_dist_to_waypoint_), &WaypointFlier::callbackTimerPublishDistToWaypoint, this);
   timer_check_subscribers_        = _nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &WaypointFlier::callbackTimerCheckSubscribers, this);
-  timer_publish_goto_             = _nh.createTimer(ros::Rate(_rate_timer_publish_goto_), &WaypointFlier::callbackTimerPublishGoTo, this, false,
-                                        false);  // the last argument disables autostart of the timer
+  // you can disable autostarting of the timer by the last argument
+  timer_publish_goto_ = _nh.createTimer(ros::Rate(_rate_timer_publish_goto_), &WaypointFlier::callbackTimerPublishGoTo, this, false, false);
 
   // | --------------- initialize service servers --------------- |
   srv_server_start_waypoints_following_ = _nh.advertiseService("start_waypoints_following_in", &WaypointFlier::callbackStartWaypointFollowing, this);
@@ -75,8 +79,7 @@ void WaypointFlier::onInit() {
   // | --------------- initialize service clients --------------- |
   srv_client_land_ = _nh.serviceClient<std_srvs::Trigger>("land_out");
 
-
-  ROS_INFO_ONCE("[WaypointFlier]: Nodelet initialized");
+  ROS_INFO_ONCE("[WaypointFlier]: initialized");
 
   is_initialized_ = true;
 }
@@ -85,6 +88,7 @@ void WaypointFlier::onInit() {
 // | ---------------------- msg callbacks --------------------- |
 
 /* callbackOdomUav() //{ */
+
 void WaypointFlier::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg) {
 
   /* do not continue if the nodelet is not initialized */
@@ -103,9 +107,11 @@ void WaypointFlier::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg) {
 
   time_last_odom_uav_ = ros::Time::now();
 }
+
 //}
 
 /* callbackTrackerDiag() //{ */
+
 void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstPtr& msg) {
 
   /* do not continue if the nodelet is not initialized */
@@ -117,7 +123,6 @@ void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstP
     ROS_INFO("[WaypointFlier]: Received first tracker diagnostics msg");
   }
 
-
   if (is_tracking_ && !msg->tracking_trajectory) {
     ROS_INFO("[WaypointFlier]: Waypoint reached.");
     std::scoped_lock lock(mutex_is_tracking_);
@@ -126,9 +131,11 @@ void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstP
 
   time_last_tracker_diagnostics_ = ros::Time::now();
 }
+
 //}
 
 /* callbackPoseGt() //{ */
+
 void WaypointFlier::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg) {
 
   /* do not continue if the nodelet is not initialized */
@@ -147,13 +154,14 @@ void WaypointFlier::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg) {
 
   time_last_odom_gt_ = ros::Time::now();
 }
+
 //}
 
 // | --------------------- timer callbacks -------------------- |
 
 /* callbackTimerPublishGoTo() //{ */
 
-void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
+void WaypointFlier::callbackTimerPublishGoTo([[maybe_unused]] const ros::TimerEvent& te) {
 
   if (!is_initialized_)
     return;
@@ -162,22 +170,29 @@ void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
   if (is_tracking_)
     return;
 
-  /* shutdown node after flying through all the waypoints (call land service before) */
+  /* shutdown the node after flying through all the waypoints (call land service before) */
   if (idx_current_waypoint_ >= n_waypoints_) {
+
     c_loop_++;
+
     ROS_INFO("[WaypointFlier]: Finished loop %d/%d", c_loop_, _n_loops_);
+
     if (c_loop_ >= _n_loops_) {
-    ROS_INFO("[WaypointFlier]: Finished %d loops of %d waypoints.", _n_loops_, n_waypoints_);
-    if (_land_end_) {
-      ROS_INFO("[WaypointFlier]: Calling land service.");
-      std_srvs::Trigger srv_land_call;
-      srv_client_land_.call(srv_land_call);
-    }
-    ROS_INFO("[WaypointFlier]: Shutting down.");
-    ros::shutdown();
-    return;
+
+      ROS_INFO("[WaypointFlier]: Finished %d loops of %d waypoints.", _n_loops_, n_waypoints_);
+
+      if (_land_end_) {
+        ROS_INFO("[WaypointFlier]: Calling land service.");
+        std_srvs::Trigger srv_land_call;
+        srv_client_land_.call(srv_land_call);
+      }
+
+      ROS_INFO("[WaypointFlier]: Shutting down.");
+      ros::shutdown();
+      return;
+
     } else {
-      ROS_INFO("[WaypointFlier]: Starting loop %d/%d", c_loop_+1, _n_loops_);
+      ROS_INFO("[WaypointFlier]: Starting loop %d/%d", c_loop_ + 1, _n_loops_);
       idx_current_waypoint_ = 0;
     }
   }
@@ -198,8 +213,8 @@ void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
   }
   new_waypoint.use_yaw = true;
 
-  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_+1, new_waypoint.position.x, new_waypoint.position.y,
-           new_waypoint.position.z, new_waypoint.position.yaw);
+  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_ + 1, new_waypoint.position.x,
+           new_waypoint.position.y, new_waypoint.position.z, new_waypoint.position.yaw);
 
   try {
     pub_goto_.publish(new_waypoint);
@@ -221,7 +236,7 @@ void WaypointFlier::callbackTimerPublishGoTo(const ros::TimerEvent& te) {
 
 /* callbackTimerPublishDistToWaypoint() //{ */
 
-void WaypointFlier::callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te) {
+void WaypointFlier::callbackTimerPublishDistToWaypoint([[maybe_unused]] const ros::TimerEvent& te) {
 
   if (!is_initialized_)
     return;
@@ -263,7 +278,8 @@ void WaypointFlier::callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te
 //}
 
 /* callbackTimerCheckSubscribers() //{ */
-void WaypointFlier::callbackTimerCheckSubscribers(const ros::TimerEvent& te) {
+
+void WaypointFlier::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
 
   if (!is_initialized_)
     return;
@@ -299,11 +315,13 @@ void WaypointFlier::callbackTimerCheckSubscribers(const ros::TimerEvent& te) {
     }
   }
 }
+
 //}
 
 // | -------------------- service callbacks ------------------- |
 
 /* //{ callbackStartWaypointFollowing() */
+
 bool WaypointFlier::callbackStartWaypointFollowing([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
 
   if (!is_initialized_) {
@@ -336,6 +354,7 @@ bool WaypointFlier::callbackStartWaypointFollowing([[maybe_unused]] std_srvs::Tr
 //}
 
 /* //{ callbackStopWaypointFollowing() */
+
 bool WaypointFlier::callbackStopWaypointFollowing([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
 
   if (!is_initialized_) {
@@ -359,6 +378,7 @@ bool WaypointFlier::callbackStopWaypointFollowing([[maybe_unused]] std_srvs::Tri
 //}
 
 /* //{ callbackFlyToFirstWaypoint() */
+
 bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
 
   if (!is_initialized_) {
@@ -370,7 +390,6 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
   }
 
   if (waypoints_loaded_) {
-
 
     /* create new waypoint msg */
     mrs_msgs::TrackerPointStamped new_waypoint;
@@ -411,7 +430,9 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
 
     res.success = true;
     res.message = temp_str;
+
   } else {
+
     ROS_WARN("[WaypointFlier]: Cannot fly to first waypoint, waypoints not loaded!");
 
     res.success = false;
@@ -419,7 +440,8 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
   }
 
   return true;
-}  // namespace waypoint_flier
+
+}
 
 //}
 
@@ -448,7 +470,7 @@ std::vector<mrs_msgs::TrackerPoint> WaypointFlier::matrixToPoints(const Eigen::M
 
 void WaypointFlier::offsetPoints(std::vector<mrs_msgs::TrackerPoint>& points, const Eigen::MatrixXd& offset) {
 
-  for (size_t i=0; i < points.size(); i++) {
+  for (size_t i = 0; i < points.size(); i++) {
     points.at(i).x += offset(0);
     points.at(i).y += offset(1);
     points.at(i).z += offset(2);
@@ -466,7 +488,6 @@ double WaypointFlier::distance(const mrs_msgs::TrackerPoint& waypoint, const geo
 }
 
 //}
-
 
 }  // namespace waypoint_flier
 

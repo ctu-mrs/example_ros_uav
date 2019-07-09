@@ -42,7 +42,6 @@
 
 //}
 
-
 namespace waypoint_flier
 {
 
@@ -65,21 +64,21 @@ private:
   void               callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
   ros::Subscriber    sub_odom_uav_;
   nav_msgs::Odometry odom_uav_;
-  bool               got_odom_uav_;
+  bool               got_odom_uav_ = false;
   std::mutex         mutex_odom_uav_;
   ros::Time          time_last_odom_uav_;
 
   void               callbackOdomGt(const nav_msgs::OdometryConstPtr& msg);
   ros::Subscriber    sub_odom_gt_;
   nav_msgs::Odometry odom_gt_;
-  bool               got_odom_gt_;
+  bool               got_odom_gt_ = false;
   std::mutex         mutex_odom_gt_;
   ros::Time          time_last_odom_gt_;
 
   void            callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstPtr& msg);
   ros::Subscriber sub_tracker_diag_;
-  bool            got_tracker_diag_;
-  bool            is_tracking_;
+  bool            got_tracker_diag_ = false;
+  bool            is_tracking_ = false;
   std::mutex      mutex_is_tracking_;
   ros::Time       time_last_tracker_diagnostics_;
 
@@ -110,17 +109,15 @@ private:
   bool               callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   ros::ServiceServer srv_server_fly_to_first_waypoint_;
 
-
   // | --------------------- service clients -------------------- |
 
   ros::ServiceClient srv_client_land_;
   bool               _land_end_;
 
-
   // | -------------------- loading waypoints ------------------- |
 
   std::vector<mrs_msgs::TrackerPoint> waypoints_;
-  bool                                waypoints_loaded_;
+  bool                                waypoints_loaded_ = false;
   mrs_msgs::TrackerPoint              current_waypoint_;
   std::mutex                          mutex_current_waypoint_;
   int                                 idx_current_waypoint_;
