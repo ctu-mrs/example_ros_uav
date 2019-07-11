@@ -47,7 +47,7 @@ For easy orientation in the code, we have agreed to follow the [ROS C++ Style Gu
   - `_simulation_` - parameter
 * Descriptive variable names are used. The purpose of the variable should be obvious from the name.
   - `sub_odom_uav_` - member subscriber to uav odometry msg type
-  - `pub_goto_` - member subscriber of goto msg type
+  - `pub_goto_` - member publisher of goto msg type
   - `srv_server_start_waypoints_following_` - member service server for starting following of waypoints
   - `WaypointFlier::callbackTimerCheckSubscribers()` - callback of timer which checks subscribers
   - `mutex_odom_uav_` - mutex locking access to variable containing odometry of the UAV
