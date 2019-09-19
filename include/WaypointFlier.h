@@ -81,7 +81,7 @@ private:
   std::mutex         mutex_odom_gt_;
   ros::Time          time_last_odom_gt_;
 
-  void            callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstPtr& msg);
+  void            callbackTrackerDiag(const mrs_msgs::MpcTrackerDiagnosticsConstPtr& msg);
   ros::Subscriber sub_tracker_diag_;
   bool            got_tracker_diag_ = false;
   bool            is_tracking_      = false;
