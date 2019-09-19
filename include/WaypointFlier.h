@@ -34,7 +34,7 @@
 
 /* custom msgs of MRS group */
 #include <mrs_msgs/TrackerPointStamped.h>
-#include <mrs_msgs/TrackerDiagnostics.h>
+#include <mrs_msgs/MpcTrackerDiagnostics.h>
 #include <mrs_msgs/Float64Stamped.h>
 
 /* custom helper functions from our library */

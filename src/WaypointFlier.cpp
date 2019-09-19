@@ -126,7 +126,7 @@ void WaypointFlier::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg) {
 
 /* callbackTrackerDiag() //{ */
 
-void WaypointFlier::callbackTrackerDiag(const mrs_msgs::TrackerDiagnosticsConstPtr& msg) {
+void WaypointFlier::callbackTrackerDiag(const mrs_msgs::MpcTrackerDiagnosticsConstPtr& msg) {
 
   /* do not continue if the nodelet is not initialized */
   if (!is_initialized_)
