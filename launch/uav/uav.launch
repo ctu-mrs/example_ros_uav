@@ -9,7 +9,7 @@
   <arg     if="$(arg debug)" name="launch_prefix_debug" value="debug_roslaunch"/>
 
   <!-- will it run as standalone nodelet or using a nodelet manager? -->
-  <arg name="standalone" default="$(optenv STANDALONE true)" />
+  <arg name="standalone" default="true" />
   <arg name="manager" default="$(arg uav_name)_waypointflier_manager" />
   <arg unless="$(arg standalone)" name="nodelet" value="load"/>
   <arg     if="$(arg standalone)" name="nodelet" value="standalone"/>
