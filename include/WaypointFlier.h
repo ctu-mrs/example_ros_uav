@@ -33,9 +33,10 @@
 #include <nav_msgs/Odometry.h>
 
 /* custom msgs of MRS group */
-#include <mrs_msgs/TrackerPointStamped.h>
+#include <mrs_msgs/TrackerPoint.h>
 #include <mrs_msgs/MpcTrackerDiagnostics.h>
 #include <mrs_msgs/Float64Stamped.h>
+#include <mrs_msgs/ReferenceStamped.h>
 
 /* custom helper functions from our library */
 #include <mrs_lib/ParamLoader.h>
@@ -95,10 +96,10 @@ private:
   ros::Timer     timer_publish_dist_to_waypoint_;
   int            _rate_timer_publish_dist_to_waypoint_;
 
-  void           callbackTimerPublishGoTo(const ros::TimerEvent& te);
-  ros::Publisher pub_goto_;
-  ros::Timer     timer_publish_goto_;
-  int            _rate_timer_publish_goto_;
+  void           callbackTimerPublishSetReference(const ros::TimerEvent& te);
+  ros::Publisher pub_set_reference_;
+  ros::Timer     timer_publisher_set_reference_;
+  int            _rate_timer_publisher_set_reference_;
 
   void       callbackTimerCheckSubscribers(const ros::TimerEvent& te);
   ros::Timer timer_check_subscribers_;

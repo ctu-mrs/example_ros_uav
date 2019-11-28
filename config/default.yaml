@@ -2,7 +2,7 @@
 rate:
   publish_dist_to_waypoint: 1 # [Hz]
   check_subscribers: 1 # [Hz]
-  publish_goto: 10 # [Hz]
+  publish_reference: 10 # [Hz]
 
 # number of times the waypoint sequence should be repeated
 n_loops: 1 # [-]

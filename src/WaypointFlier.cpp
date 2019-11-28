@@ -37,7 +37,7 @@ void WaypointFlier::onInit() {
   param_loader.load_param("waypoint_idle_time", _waypoint_idle_time_);
   param_loader.load_param("rate/publish_dist_to_waypoint", _rate_timer_publish_dist_to_waypoint_);
   param_loader.load_param("rate/check_subscribers", _rate_timer_check_subscribers_);
-  param_loader.load_param("rate/publish_goto", _rate_timer_publish_goto_);
+  param_loader.load_param("rate/publish_reference", _rate_timer_publisher_set_reference_);
 
   /* load waypoints as a half-dynamic matrix from config file */
   Eigen::MatrixXd waypoint_matrix;
@@ -65,13 +65,14 @@ void WaypointFlier::onInit() {
 
   // | ------------------ initialize publishers ----------------- |
   pub_dist_to_waypoint_ = nh.advertise<mrs_msgs::Float64Stamped>("dist_to_waypoint_out", 1);
-  pub_goto_             = nh.advertise<mrs_msgs::TrackerPointStamped>("goto_out", 1);
+  pub_set_reference_    = nh.advertise<mrs_msgs::ReferenceStamped>("set_reference_out", 1);
 
   // | -------------------- initialize timers ------------------- |
   timer_publish_dist_to_waypoint_ = nh.createTimer(ros::Rate(_rate_timer_publish_dist_to_waypoint_), &WaypointFlier::callbackTimerPublishDistToWaypoint, this);
   timer_check_subscribers_        = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &WaypointFlier::callbackTimerCheckSubscribers, this);
   // you can disable autostarting of the timer by the last argument
-  timer_publish_goto_ = nh.createTimer(ros::Rate(_rate_timer_publish_goto_), &WaypointFlier::callbackTimerPublishGoTo, this, false, false);
+  timer_publisher_set_reference_ =
+      nh.createTimer(ros::Rate(_rate_timer_publisher_set_reference_), &WaypointFlier::callbackTimerPublishSetReference, this, false, false);
 
   // | --------------- initialize service servers --------------- |
   srv_server_start_waypoints_following_ = nh.advertiseService("start_waypoints_following_in", &WaypointFlier::callbackStartWaypointFollowing, this);
@@ -180,9 +181,9 @@ void WaypointFlier::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg) {
 
 // | --------------------- timer callbacks -------------------- |
 
-/* callbackTimerPublishGoTo() //{ */
+/* callbackTimerPublishSetReference() //{ */
 
-void WaypointFlier::callbackTimerPublishGoTo([[maybe_unused]] const ros::TimerEvent& te) {
+void WaypointFlier::callbackTimerPublishSetReference([[maybe_unused]] const ros::TimerEvent& te) {
 
   if (!is_initialized_)
     return;
@@ -223,29 +224,28 @@ void WaypointFlier::callbackTimerPublishGoTo([[maybe_unused]] const ros::TimerEv
   }
 
   /* create new waypoint msg */
-  mrs_msgs::TrackerPointStamped new_waypoint;
-  new_waypoint.header.frame_id = "local_origin";
+  mrs_msgs::ReferenceStamped new_waypoint;
+  new_waypoint.header.frame_id = "gps_origin";
   new_waypoint.header.stamp    = ros::Time::now();
 
   {
     std::scoped_lock lock(mutex_current_waypoint_);
 
-    current_waypoint_         = waypoints_.at(idx_current_waypoint_);
-    new_waypoint.position.x   = current_waypoint_.x;
-    new_waypoint.position.y   = current_waypoint_.y;
-    new_waypoint.position.z   = current_waypoint_.z;
-    new_waypoint.position.yaw = current_waypoint_.yaw;
+    current_waypoint_                 = waypoints_.at(idx_current_waypoint_);
+    new_waypoint.reference.position.x = current_waypoint_.x;
+    new_waypoint.reference.position.y = current_waypoint_.y;
+    new_waypoint.reference.position.z = current_waypoint_.z;
+    new_waypoint.reference.yaw        = current_waypoint_.yaw;
   }
-  new_waypoint.use_yaw = true;
 
-  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_ + 1, new_waypoint.position.x,
-           new_waypoint.position.y, new_waypoint.position.z, new_waypoint.position.yaw);
+  ROS_INFO("[WaypointFlier]: Flying to waypoint %d: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", idx_current_waypoint_ + 1, new_waypoint.reference.position.x,
+           new_waypoint.reference.position.y, new_waypoint.reference.position.z, new_waypoint.reference.yaw);
 
   try {
-    pub_goto_.publish(new_waypoint);
+    pub_set_reference_.publish(new_waypoint);
   }
   catch (...) {
-    ROS_ERROR("Exception caught during publishing topic %s.", pub_goto_.getTopic().c_str());
+    ROS_ERROR("Exception caught during publishing topic %s.", pub_set_reference_.getTopic().c_str());
   }
 
   idx_current_waypoint_++;
@@ -367,7 +367,7 @@ bool WaypointFlier::callbackStartWaypointFollowing([[maybe_unused]] std_srvs::Tr
 
   if (waypoints_loaded_) {
 
-    timer_publish_goto_.start();
+    timer_publisher_set_reference_.start();
 
     ROS_INFO("[WaypointFlier]: Starting waypoint following.");
 
@@ -398,7 +398,7 @@ bool WaypointFlier::callbackStopWaypointFollowing([[maybe_unused]] std_srvs::Tri
     return true;
   }
 
-  timer_publish_goto_.stop();
+  timer_publisher_set_reference_.stop();
 
   ROS_INFO("[WaypointFlier]: Waypoint following stopped.");
 
@@ -425,18 +425,20 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
   if (waypoints_loaded_) {
 
     /* create new waypoint msg */
-    mrs_msgs::TrackerPointStamped new_waypoint;
-    new_waypoint.header.frame_id = "local_origin";
-    new_waypoint.header.stamp    = ros::Time::now();
-    new_waypoint.use_yaw         = true;
+    mrs_msgs::ReferenceStamped new_waypoint;
+
+    // it is important to set the frame id correctly !!
+    new_waypoint.header.frame_id = "gps_origin";
+
+    new_waypoint.header.stamp = ros::Time::now();
     {
       std::scoped_lock lock(mutex_current_waypoint_);
 
-      current_waypoint_         = waypoints_.at(0);
-      new_waypoint.position.x   = current_waypoint_.x;
-      new_waypoint.position.y   = current_waypoint_.y;
-      new_waypoint.position.z   = current_waypoint_.z;
-      new_waypoint.position.yaw = current_waypoint_.yaw;
+      current_waypoint_                 = waypoints_.at(0);
+      new_waypoint.reference.position.x = current_waypoint_.x;
+      new_waypoint.reference.position.y = current_waypoint_.y;
+      new_waypoint.reference.position.z = current_waypoint_.z;
+      new_waypoint.reference.yaw        = current_waypoint_.yaw;
     }
 
     idx_current_waypoint_ = 0;
@@ -448,18 +450,18 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
     }
 
     try {
-      pub_goto_.publish(new_waypoint);
+      pub_set_reference_.publish(new_waypoint);
     }
     catch (...) {
-      ROS_ERROR("Exception caught during publishing topic %s.", pub_goto_.getTopic().c_str());
+      ROS_ERROR("Exception caught during publishing topic %s.", pub_set_reference_.getTopic().c_str());
     }
 
-    ROS_INFO("[WaypointFlier]: Flying to first waypoint: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", new_waypoint.position.x, new_waypoint.position.y,
-             new_waypoint.position.z, new_waypoint.position.yaw);
+    ROS_INFO("[WaypointFlier]: Flying to first waypoint: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", new_waypoint.reference.position.x,
+             new_waypoint.reference.position.y, new_waypoint.reference.position.z, new_waypoint.reference.yaw);
 
     char temp_str[100];
-    sprintf((char*)&temp_str, "Flying to first waypoint: x: %2.2f, y: %2.2f, z: %2.2f, yaw: %2.2f", new_waypoint.position.x, new_waypoint.position.y,
-            new_waypoint.position.z, new_waypoint.position.yaw);
+    sprintf((char*)&temp_str, "Flying to first waypoint: x: %2.2f, y: %2.2f, z: %2.2f, yaw: %2.2f", new_waypoint.reference.position.x,
+            new_waypoint.reference.position.y, new_waypoint.reference.position.z, new_waypoint.reference.yaw);
 
     res.success = true;
     res.message = temp_str;
