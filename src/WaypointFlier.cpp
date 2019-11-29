@@ -37,7 +37,7 @@ void WaypointFlier::onInit() {
   param_loader.load_param("waypoint_idle_time", _waypoint_idle_time_);
   param_loader.load_param("rate/publish_dist_to_waypoint", _rate_timer_publish_dist_to_waypoint_);
   param_loader.load_param("rate/check_subscribers", _rate_timer_check_subscribers_);
-  param_loader.load_param("rate/publish_reference", _rate_timer_publisher_set_reference_);
+  param_loader.load_param("rate/publish_reference", _rate_timer_publisher_reference_);
 
   /* load waypoints as a half-dynamic matrix from config file */
   Eigen::MatrixXd waypoint_matrix;
@@ -65,14 +65,14 @@ void WaypointFlier::onInit() {
 
   // | ------------------ initialize publishers ----------------- |
   pub_dist_to_waypoint_ = nh.advertise<mrs_msgs::Float64Stamped>("dist_to_waypoint_out", 1);
-  pub_set_reference_    = nh.advertise<mrs_msgs::ReferenceStamped>("set_reference_out", 1);
+  pub_reference_        = nh.advertise<mrs_msgs::ReferenceStamped>("reference_out", 1);
 
   // | -------------------- initialize timers ------------------- |
   timer_publish_dist_to_waypoint_ = nh.createTimer(ros::Rate(_rate_timer_publish_dist_to_waypoint_), &WaypointFlier::callbackTimerPublishDistToWaypoint, this);
   timer_check_subscribers_        = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &WaypointFlier::callbackTimerCheckSubscribers, this);
   // you can disable autostarting of the timer by the last argument
-  timer_publisher_set_reference_ =
-      nh.createTimer(ros::Rate(_rate_timer_publisher_set_reference_), &WaypointFlier::callbackTimerPublishSetReference, this, false, false);
+  timer_publisher_reference_ =
+      nh.createTimer(ros::Rate(_rate_timer_publisher_reference_), &WaypointFlier::callbackTimerPublishSetReference, this, false, false);
 
   // | --------------- initialize service servers --------------- |
   srv_server_start_waypoints_following_ = nh.advertiseService("start_waypoints_following_in", &WaypointFlier::callbackStartWaypointFollowing, this);
@@ -242,10 +242,10 @@ void WaypointFlier::callbackTimerPublishSetReference([[maybe_unused]] const ros:
            new_waypoint.reference.position.y, new_waypoint.reference.position.z, new_waypoint.reference.yaw);
 
   try {
-    pub_set_reference_.publish(new_waypoint);
+    pub_reference_.publish(new_waypoint);
   }
   catch (...) {
-    ROS_ERROR("Exception caught during publishing topic %s.", pub_set_reference_.getTopic().c_str());
+    ROS_ERROR("Exception caught during publishing topic %s.", pub_reference_.getTopic().c_str());
   }
 
   idx_current_waypoint_++;
@@ -367,7 +367,7 @@ bool WaypointFlier::callbackStartWaypointFollowing([[maybe_unused]] std_srvs::Tr
 
   if (waypoints_loaded_) {
 
-    timer_publisher_set_reference_.start();
+    timer_publisher_reference_.start();
 
     ROS_INFO("[WaypointFlier]: Starting waypoint following.");
 
@@ -398,7 +398,7 @@ bool WaypointFlier::callbackStopWaypointFollowing([[maybe_unused]] std_srvs::Tri
     return true;
   }
 
-  timer_publisher_set_reference_.stop();
+  timer_publisher_reference_.stop();
 
   ROS_INFO("[WaypointFlier]: Waypoint following stopped.");
 
@@ -450,10 +450,10 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
     }
 
     try {
-      pub_set_reference_.publish(new_waypoint);
+      pub_reference_.publish(new_waypoint);
     }
     catch (...) {
-      ROS_ERROR("Exception caught during publishing topic %s.", pub_set_reference_.getTopic().c_str());
+      ROS_ERROR("Exception caught during publishing topic %s.", pub_reference_.getTopic().c_str());
     }
 
     ROS_INFO("[WaypointFlier]: Flying to first waypoint: x: %2.2f y: %2.2f z: %2.2f yaw: %2.2f", new_waypoint.reference.position.x,

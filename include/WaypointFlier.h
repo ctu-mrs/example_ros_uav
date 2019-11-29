@@ -97,9 +97,9 @@ private:
   int            _rate_timer_publish_dist_to_waypoint_;
 
   void           callbackTimerPublishSetReference(const ros::TimerEvent& te);
-  ros::Publisher pub_set_reference_;
-  ros::Timer     timer_publisher_set_reference_;
-  int            _rate_timer_publisher_set_reference_;
+  ros::Publisher pub_reference_;
+  ros::Timer     timer_publisher_reference_;
+  int            _rate_timer_publisher_reference_;
 
   void       callbackTimerCheckSubscribers(const ros::TimerEvent& te);
   ros::Timer timer_check_subscribers_;

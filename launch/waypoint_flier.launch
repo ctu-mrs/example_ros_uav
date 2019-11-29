@@ -39,7 +39,7 @@
       <remap from="~odom_gt_in" to="ground_truth" />
 
       <!-- Publishers -->
-      <remap from="~set_reference_out" to="control_manager/set_reference" />
+      <remap from="~reference_out" to="control_manager/reference" />
       <remap from="~dist_to_waypoint_out" to="~dist_to_waypoint" />
 
       <!-- Service servers -->
