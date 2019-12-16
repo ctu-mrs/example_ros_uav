@@ -225,7 +225,9 @@ void WaypointFlier::callbackTimerPublishSetReference([[maybe_unused]] const ros:
 
   /* create new waypoint msg */
   mrs_msgs::ReferenceStamped new_waypoint;
-  new_waypoint.header.frame_id = "gps_origin";
+    // it is important to set the frame id correctly !!
+    // -- "" means the frame currently used for control
+  new_waypoint.header.frame_id = "";
   new_waypoint.header.stamp    = ros::Time::now();
 
   {
@@ -288,7 +290,9 @@ void WaypointFlier::callbackTimerPublishDistToWaypoint([[maybe_unused]] const ro
   ROS_INFO("[WaypointFlier]: Distance to waypoint: %2.2f", dist);
 
   mrs_msgs::Float64Stamped dist_msg;
-  dist_msg.header.frame_id = "local_origin";
+    // it is important to set the frame id correctly !!
+    // -- "" means the frame currently used for control
+  dist_msg.header.frame_id = "";
   dist_msg.header.stamp    = ros::Time::now();
   dist_msg.value           = dist;
 
@@ -428,7 +432,8 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
     mrs_msgs::ReferenceStamped new_waypoint;
 
     // it is important to set the frame id correctly !!
-    new_waypoint.header.frame_id = "gps_origin";
+    // -- "" means the frame currently used for control
+    new_waypoint.header.frame_id = "";
 
     new_waypoint.header.stamp = ros::Time::now();
     {
