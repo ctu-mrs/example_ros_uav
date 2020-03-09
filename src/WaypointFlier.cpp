@@ -31,6 +31,7 @@ void WaypointFlier::onInit() {
   /* (mrs_lib implementation checks whether the parameter was loaded or not) */
   mrs_lib::ParamLoader param_loader(nh, "WaypointFlier");
 
+  param_loader.load_param("uav_name", _uav_name_);
   param_loader.load_param("simulation", _simulation_);
   param_loader.load_param("land_at_the_end", _land_end_);
   param_loader.load_param("n_loops", _n_loops_);
@@ -38,6 +39,9 @@ void WaypointFlier::onInit() {
   param_loader.load_param("rate/publish_dist_to_waypoint", _rate_timer_publish_dist_to_waypoint_);
   param_loader.load_param("rate/check_subscribers", _rate_timer_check_subscribers_);
   param_loader.load_param("rate/publish_reference", _rate_timer_publisher_reference_);
+
+  /* the frame in which the waypoints are specified */
+  param_loader.load_param("frame_id", _frame_id_);
 
   /* load waypoints as a half-dynamic matrix from config file */
   Eigen::MatrixXd waypoint_matrix;
@@ -225,9 +229,8 @@ void WaypointFlier::callbackTimerPublishSetReference([[maybe_unused]] const ros:
 
   /* create new waypoint msg */
   mrs_msgs::ReferenceStamped new_waypoint;
-    // it is important to set the frame id correctly !!
-    // -- "" means the frame currently used for control
-  new_waypoint.header.frame_id = "";
+  // it is important to set the frame id correctly !!
+  new_waypoint.header.frame_id = _uav_name_ + "/" + _frame_id_;
   new_waypoint.header.stamp    = ros::Time::now();
 
   {
@@ -291,8 +294,7 @@ void WaypointFlier::callbackTimerPublishDistToWaypoint([[maybe_unused]] const ro
 
   mrs_msgs::Float64Stamped dist_msg;
     // it is important to set the frame id correctly !!
-    // -- "" means the frame currently used for control
-  dist_msg.header.frame_id = "";
+  dist_msg.header.frame_id = _uav_name_ + "/" + _frame_id_;
   dist_msg.header.stamp    = ros::Time::now();
   dist_msg.value           = dist;
 
@@ -432,9 +434,7 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
     mrs_msgs::ReferenceStamped new_waypoint;
 
     // it is important to set the frame id correctly !!
-    // -- "" means the frame currently used for control
-    new_waypoint.header.frame_id = "";
-
+    new_waypoint.header.frame_id = _uav_name_ + "/" + _frame_id_;
     new_waypoint.header.stamp = ros::Time::now();
     {
       std::scoped_lock lock(mutex_current_waypoint_);
