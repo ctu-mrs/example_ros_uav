@@ -63,7 +63,8 @@ private:
   bool is_initialized_ = false;
 
   /* ros parameters */
-  bool _simulation_;
+  bool        _simulation_;
+  std::string _uav_name_;
 
   // | ---------------------- msg callbacks --------------------- |
 
@@ -124,6 +125,7 @@ private:
 
   std::vector<mrs_msgs::TrackerPoint> waypoints_;
   bool                                waypoints_loaded_ = false;
+  std::string                         _frame_id_;
   mrs_msgs::TrackerPoint              current_waypoint_;
   std::mutex                          mutex_current_waypoint_;
   int                                 idx_current_waypoint_;
