@@ -19,6 +19,7 @@ void WaypointFlier::onInit() {
   got_tracker_diag_ = false;
 
   is_tracking_      = false;
+  is_idling_        = false;
   waypoints_loaded_ = false;
 
   /* obtain node handle */
@@ -57,6 +58,9 @@ void WaypointFlier::onInit() {
   /* load offset of all waypoints as a static matrix from config file */
   param_loader.load_matrix_static("offset", _offset_, 1, 4);
   offsetPoints(waypoints_, _offset_);
+
+  // | ----------------------- transformer ---------------------- |
+  transformer_ = mrs_lib::Transformer("WaypointFlier", _uav_name_);
 
   // | ------------------ initialize subscribers ----------------- |
   sub_odom_uav_     = nh.subscribe("odom_uav_in", 1, &WaypointFlier::callbackOdomUav, this, ros::TransportHints().tcpNoDelay());
@@ -282,18 +286,19 @@ void WaypointFlier::callbackTimerPublishDistToWaypoint([[maybe_unused]] const ro
     tmp_current_waypoint = current_waypoint_;
   }
 
-  geometry_msgs::Pose tmp_pose_uav;
+  geometry_msgs::PoseStamped tmp_pose_uav;
   {
     std::scoped_lock lock(mutex_odom_uav_);
 
-    tmp_pose_uav = odom_uav_.pose.pose;
+    tmp_pose_uav.header = odom_uav_.header;
+    tmp_pose_uav.pose   = odom_uav_.pose.pose;
   }
 
   double dist = distance(tmp_current_waypoint, tmp_pose_uav);
   ROS_INFO("[WaypointFlier]: Distance to waypoint: %2.2f", dist);
 
   mrs_msgs::Float64Stamped dist_msg;
-    // it is important to set the frame id correctly !!
+  // it is important to set the frame id correctly !!
   dist_msg.header.frame_id = _uav_name_ + "/" + _frame_id_;
   dist_msg.header.stamp    = ros::Time::now();
   dist_msg.value           = dist;
@@ -435,7 +440,7 @@ bool WaypointFlier::callbackFlyToFirstWaypoint([[maybe_unused]] std_srvs::Trigge
 
     // it is important to set the frame id correctly !!
     new_waypoint.header.frame_id = _uav_name_ + "/" + _frame_id_;
-    new_waypoint.header.stamp = ros::Time::now();
+    new_waypoint.header.stamp    = ros::Time::now();
     {
       std::scoped_lock lock(mutex_current_waypoint_);
 
@@ -543,9 +548,27 @@ void WaypointFlier::offsetPoints(std::vector<mrs_msgs::TrackerPoint>& points, co
 
 /* distance() //{ */
 
-double WaypointFlier::distance(const mrs_msgs::TrackerPoint& waypoint, const geometry_msgs::Pose& pose) {
+double WaypointFlier::distance(const mrs_msgs::TrackerPoint& waypoint, const geometry_msgs::PoseStamped& pose) {
 
-  return std::sqrt(std::pow(waypoint.x - pose.position.x, 2) + std::pow(waypoint.y - pose.position.y, 2) + std::pow(waypoint.z - pose.position.z, 2));
+  geometry_msgs::PoseStamped pose_tmp = pose;
+
+  // Check if the two points are in the same reference frame
+  if (pose.header.frame_id != _uav_name_ + "/" + _frame_id_) {
+
+    // We have to transform the two points to a common frame
+    auto response = transformer_.transformSingle(_uav_name_ + "/" + _frame_id_, pose_tmp);
+
+    if (response) {
+
+      pose_tmp.pose = response.value().pose;
+
+    } else {
+
+      ROS_WARN_THROTTLE(1.0, "[WaypointFlier]: Transform from %s to %s failed", pose_tmp.header.frame_id.c_str(), (_uav_name_ + "/" + _frame_id_).c_str());
+    }
+  }
+
+  return std::sqrt(std::pow(waypoint.x - pose_tmp.pose.position.x, 2) + std::pow(waypoint.y - pose_tmp.pose.position.y, 2) + std::pow(waypoint.z - pose_tmp.pose.position.z, 2));
 }
 
 //}

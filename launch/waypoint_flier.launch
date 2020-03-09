@@ -28,7 +28,7 @@
 
       <!-- Parameters loaded from launch file -->
       <param name="simulation" value="$(eval arg('RUN_TYPE') == 'simulation')" />
-      <param name="uav_name" value="$(arg uav_name)" />
+      <param name="uav_name" value="$(arg UAV_NAME)" />
 
       <!-- ROS parameters config file -->
       <rosparam file="$(find waypoint_flier)/config/default.yaml" />

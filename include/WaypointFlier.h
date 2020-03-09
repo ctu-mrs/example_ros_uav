@@ -40,6 +40,7 @@
 
 /* custom helper functions from our library */
 #include <mrs_lib/ParamLoader.h>
+#include <mrs_lib/transformer.h>
 
 /* for calling simple ros services */
 #include <std_srvs/Trigger.h>
@@ -124,6 +125,10 @@ private:
 
   // | -------------------- loading waypoints ------------------- |
 
+  // | ----------------------- transformer ---------------------- |
+  // custom library functions to handle transforms between frames
+  mrs_lib::Transformer transformer_;
+
   std::vector<mrs_msgs::TrackerPoint> waypoints_;
   bool                                waypoints_loaded_ = false;
   std::string                         _frame_id_;
@@ -159,7 +164,7 @@ private:
 
   void offsetPoints(std::vector<mrs_msgs::TrackerPoint>& points, const Eigen::MatrixXd& offset);
 
-  double distance(const mrs_msgs::TrackerPoint& waypoint, const geometry_msgs::Pose& pose);
+  double distance(const mrs_msgs::TrackerPoint& waypoint, const geometry_msgs::PoseStamped& pose);
 };
 //}
 
