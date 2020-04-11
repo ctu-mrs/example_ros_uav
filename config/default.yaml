@@ -14,8 +14,7 @@ land_at_the_end: false
 waypoint_idle_time: 0.0
 
 # the frame in which the waypoints are specified
-# "" means the current control frame
-frame_id: ""
+frame_id: "gps_origin"
 
 # matrix of waypoints which will be flown through by the UAV
 # x [m], y [m], z [m], yaw [rad]
