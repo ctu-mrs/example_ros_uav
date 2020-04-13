@@ -36,7 +36,7 @@
 
       <!-- Subscribers -->
       <remap from="~odom_uav_in" to="odometry/odom_main" />
-      <remap from="~tracker_diagnostics_in" to="control_manager/mpc_tracker/diagnostics" />
+      <remap from="~control_manager_diagnostics_in" to="control_manager/diagnostics" />
       <remap from="~odom_gt_in" to="ground_truth" />
 
       <!-- Publishers -->
