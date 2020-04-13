@@ -33,13 +33,16 @@
 #include <nav_msgs/Odometry.h>
 
 /* custom msgs of MRS group */
-#include <mrs_msgs/TrackerPoint.h>
-#include <mrs_msgs/MpcTrackerDiagnostics.h>
+#include <mrs_msgs/ControlManagerDiagnostics.h>
 #include <mrs_msgs/Float64Stamped.h>
 #include <mrs_msgs/ReferenceStamped.h>
 
 /* custom helper functions from our library */
-#include <mrs_lib/ParamLoader.h>
+#include <mrs_lib/param_loader.h>
+#include <mrs_lib/subscribe_handler.h>
+#include <mrs_lib/mutex.h>
+#include <mrs_lib/attitude_converter.h>
+#include <mrs_lib/msg_extractor.h>
 
 /* for calling simple ros services */
 #include <std_srvs/Trigger.h>
@@ -68,26 +71,12 @@ private:
 
   // | ---------------------- msg callbacks --------------------- |
 
-  void               callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
-  ros::Subscriber    sub_odom_uav_;
-  nav_msgs::Odometry odom_uav_;
-  bool               got_odom_uav_ = false;
-  std::mutex         mutex_odom_uav_;
-  ros::Time          time_last_odom_uav_;
+  mrs_lib::SubscribeHandler<nav_msgs::Odometry>                  sh_odometry_;
+  mrs_lib::SubscribeHandler<nav_msgs::Odometry>                  sh_ground_truth_;
+  mrs_lib::SubscribeHandler<mrs_msgs::ControlManagerDiagnostics> sh_control_manager_diag_;
 
-  void               callbackOdomGt(const nav_msgs::OdometryConstPtr& msg);
-  ros::Subscriber    sub_odom_gt_;
-  nav_msgs::Odometry odom_gt_;
-  bool               got_odom_gt_ = false;
-  std::mutex         mutex_odom_gt_;
-  ros::Time          time_last_odom_gt_;
-
-  void            callbackTrackerDiag(const mrs_msgs::MpcTrackerDiagnosticsConstPtr& msg);
-  ros::Subscriber sub_tracker_diag_;
-  bool            got_tracker_diag_ = false;
-  bool            is_tracking_      = false;
-  std::mutex      mutex_is_tracking_;
-  ros::Time       time_last_tracker_diagnostics_;
+  void callbackControlManagerDiag(mrs_lib::SubscribeHandler<mrs_msgs::ControlManagerDiagnostics>& sh);
+  bool have_goal_ = false;
 
   // | --------------------- timer callbacks -------------------- |
 
@@ -123,16 +112,17 @@ private:
 
   // | -------------------- loading waypoints ------------------- |
 
-  std::vector<mrs_msgs::TrackerPoint> waypoints_;
-  bool                                waypoints_loaded_ = false;
-  mrs_msgs::TrackerPoint              current_waypoint_;
-  std::mutex                          mutex_current_waypoint_;
-  int                                 idx_current_waypoint_;
-  int                                 n_waypoints_;
-  int                                 _n_loops_;
-  int                                 c_loop_;
-  std::mutex                          mutex_waypoint_idle_time_;
-  Eigen::MatrixXd                     _offset_;
+  std::vector<mrs_msgs::Reference> waypoints_;
+  std::string                      _waypoints_frame_;
+  bool                             waypoints_loaded_ = false;
+  mrs_msgs::Reference              current_waypoint_;
+  std::mutex                       mutex_current_waypoint_;
+  int                              idx_current_waypoint_;
+  int                              n_waypoints_;
+  int                              _n_loops_;
+  int                              c_loop_;
+  std::mutex                       mutex_waypoint_idle_time_;
+  Eigen::MatrixXd                  _offset_;
 
   // | ------------------- dynamic reconfigure ------------------ |
 
@@ -145,19 +135,18 @@ private:
 
   // | --------------------- waypoint idling -------------------- |
 
-  bool       is_idling_;
+  bool       is_idling_ = false;
   ros::Timer timer_idling_;
   double     _waypoint_idle_time_;
   void       callbackTimerIdling(const ros::TimerEvent& te);
 
-
   // | -------------------- support functions ------------------- |
 
-  std::vector<mrs_msgs::TrackerPoint> matrixToPoints(const Eigen::MatrixXd& matrix);
+  std::vector<mrs_msgs::Reference> matrixToPoints(const Eigen::MatrixXd& matrix);
 
-  void offsetPoints(std::vector<mrs_msgs::TrackerPoint>& points, const Eigen::MatrixXd& offset);
+  void offsetPoints(std::vector<mrs_msgs::Reference>& points, const Eigen::MatrixXd& offset);
 
-  double distance(const mrs_msgs::TrackerPoint& waypoint, const geometry_msgs::Pose& pose);
+  double distance(const mrs_msgs::Reference& waypoint, const geometry_msgs::Pose& pose);
 };
 //}
 
