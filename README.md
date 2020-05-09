@@ -1,4 +1,4 @@
-# Example ROS package waypoint_flier
+# MRS ROS example
 
 This package was created as an example of how to write basic ROS nodelets. The package is written in C++ and features custom MRS libraries and msgs.
 
