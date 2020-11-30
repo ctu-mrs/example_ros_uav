@@ -4,6 +4,9 @@
 /* every nodelet must include macros which export the class as a nodelet plugin */
 #include <pluginlib/class_list_macros.h>
 
+using vec2_t = mrs_lib::geometry::vec_t<2>;
+using vec3_t = mrs_lib::geometry::vec_t<3>;
+
 namespace waypoint_flier
 {
 
@@ -494,7 +497,7 @@ void WaypointFlier::offsetPoints(std::vector<mrs_msgs::Reference>& points, const
 
 double WaypointFlier::distance(const mrs_msgs::Reference& waypoint, const geometry_msgs::Pose& pose) {
 
-  return mrs_lib::dist3d(waypoint.position.x, waypoint.position.y, waypoint.position.z, pose.position.x, pose.position.y, pose.position.z);
+  return mrs_lib::geometry::dist(vec3_t(waypoint.position.x, waypoint.position.y, waypoint.position.z), vec3_t(pose.position.x, pose.position.y, pose.position.z));
 }
 
 //}

@@ -43,6 +43,7 @@
 #include <mrs_lib/mutex.h>
 #include <mrs_lib/attitude_converter.h>
 #include <mrs_lib/msg_extractor.h>
+#include <mrs_lib/geometry/misc.h>
 
 /* for calling simple ros services */
 #include <std_srvs/Trigger.h>
