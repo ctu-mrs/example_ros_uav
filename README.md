@@ -37,6 +37,7 @@ See [ROS packages](http://wiki.ros.org/Packages)
 ## Coding style
 
 For easy orientation in the code, we have agreed to follow the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide) when writing our packages.
+Also check out our general [C++ good/bad coding practices tutorial](https://ctu-mrs.github.io/docs/introduction/c_to_cpp.html).
 
 ### Naming variables
 
