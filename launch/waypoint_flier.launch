@@ -20,7 +20,7 @@
   <arg unless="$(arg standalone)" name="nodelet_manager" value="$(arg manager)"/>
   <arg     if="$(arg standalone)" name="nodelet_manager" value=""/>
 
-  <!-- Namespace -->
+  <!-- Namespace - all topics, services and parameters will be remapped using this namespace as a prefix (eg.: "/waypoint_flier/odom_uav_in" to "/uav1/waypoint_flier/odom_uav_in") -->
   <group ns="$(arg UAV_NAME)">
 
     <!-- WaypointFlier nodelet -->
@@ -34,21 +34,21 @@
       <rosparam file="$(find waypoint_flier)/config/default.yaml" />
       <rosparam file="$(find waypoint_flier)/config/$(arg RUN_TYPE).yaml" />
 
-      <!-- Subscribers -->
+      <!-- Subscribers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~odom_uav_in" to="odometry/odom_main" />
       <remap from="~control_manager_diagnostics_in" to="control_manager/diagnostics" />
       <remap from="~odom_gt_in" to="ground_truth" />
 
-      <!-- Publishers -->
+      <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~reference_out" to="control_manager/reference" />
       <remap from="~dist_to_waypoint_out" to="~dist_to_waypoint" />
 
-      <!-- Service servers -->
+      <!-- Service servers (note that the service names will also be remapped using the namespace as a prefix) -->
       <remap from="~start_waypoints_following_in" to="~start_waypoints_following" />
       <remap from="~stop_waypoints_following_in" to="~stop_waypoints_following" />
       <remap from="~fly_to_first_waypoint_in" to="~fly_to_first_waypoint" />
 
-      <!-- Service clients -->
+      <!-- Service clients (note that the service names will also be remapped using the namespace as a prefix) -->
       <remap from="~land_out" to="uav_manager/land" />
 
     </node>
