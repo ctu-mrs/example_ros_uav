@@ -8,7 +8,7 @@
   <maintainer email="matej.petrlik@fel.cvut.cz">Matej Petrlik</maintainer>
   <author email="matej.petrlik@fel.cvut.cz">Matej Petrlik</author>
 
-  <license>TODO</license>
+  <license>MIT</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
