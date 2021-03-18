@@ -2,7 +2,7 @@
 <package format="2">
 
   <name>waypoint_flier</name>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <description>waypoint_flier</description>
 
   <maintainer email="matej.petrlik@fel.cvut.cz">Matej Petrlik</maintainer>
